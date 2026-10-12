@@ -1,5 +1,11 @@
 /* Form designer: field types on the left, field list, drag-and-drop canvas, field options popup. */
 
+/* Tab row: no scrollbar. Tabs wrap onto a second line if the screen is too narrow. */
+.tabs{overflow:visible;flex-wrap:wrap}
+
+/* Designer uses the full width of the screen, not the 960px reading column. */
+.wrap:has(.dz){max-width:none}
+
 .dz{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
 .dz-types{flex:0 1 200px;min-width:170px;padding:12px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px}
 .dz-list{flex:0 1 230px;min-width:190px;padding:12px;box-sizing:border-box}
@@ -44,6 +50,13 @@
 .fmodal-f{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid var(--line);background:var(--sunk);flex-wrap:wrap}
 .fmodal-f .grow{flex:1}
 
-@media (max-width:720px){
+/* Narrow screens: the three panels stack and the page scrolls normally. */
+@media (max-width:900px){
   .dz-types,.dz-list,.dz-canvas{flex:1 1 100%}
+}
+
+/* Wide screens: the three panels fill the height of the screen. Each one scrolls inside itself. */
+@media (min-width:901px){
+  .dz{flex-wrap:nowrap;align-items:stretch;height:calc(100dvh - 270px);min-height:420px}
+  .dz>aside,.dz>main{min-height:0;overflow-y:auto;padding-bottom:88px}
 }
