@@ -1,0 +1,31 @@
+{
+  "name": "formwright",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Form builder with linked forms, parent/child records, calculations and group-based permissions, on Firebase.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "emulators": "firebase emulators:start --project demo-formwright --import=.emulator-data --export-on-exit",
+    "test": "npm run test:unit",
+    "test:unit": "node --test tests/unit/*.test.js",
+    "test:rules": "firebase emulators:exec --only firestore,storage --project demo-formwright \"node --test tests/rules/*.test.js\"",
+    "deploy": "npm run build && firebase deploy --only hosting,firestore,storage",
+    "deploy:rules": "firebase deploy --only firestore:rules,storage",
+    "make-admin": "node scripts/make-admin.mjs"
+  },
+  "dependencies": {
+    "firebase": "^11.0.2"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "firebase-admin": "^12.7.0",
+    "firebase-tools": "^13.24.2",
+    "vite": "^5.4.10"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

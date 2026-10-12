@@ -1,0 +1,119 @@
+rules_version = '2';
+
+// Formwright security model
+//
+// users/{uid}      Account record. `role` is "admin" or "member". `groups` lists group ids.
+//                  `access` is the effective permission map computed from the user's groups:
+//                  { "<formId>": {view, edit}, "*": {view, edit} }, where each level is
+//                  "none", "own" (records the user created) or "all".
+//                  Only admins can change role, groups or access.
+// groups/{id}      Group definitions. Admin only.
+// profiles/{uid}   Display names, readable by every signed-in user so records can show
+//                  who created them.
+// forms/{id}       Form definitions. Everyone signed in reads; only admins write.
+// records/{id}     Form entries. Access is checked against the caller's `access` map.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    function userPath() { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function hasAccount() { return signedIn() && exists(userPath()); }
+    function me() { return get(userPath()).data; }
+    function isAdmin() { return hasAccount() && me().get('role', 'member') == 'admin'; }
+
+    // Effective level for one form: the form's own entry, else the "*" default, else nothing.
+    function level(formId) {
+      let acc = me().get('access', {});
+      return acc.get(formId, acc.get('*', {'view': 'none', 'edit': 'none'}));
+    }
+    function viewLevel(formId) { return level(formId).get('view', 'none'); }
+    function editLevel(formId) { return level(formId).get('edit', 'none'); }
+
+    function canViewRecord(d) {
+      return isAdmin() || (hasAccount() && (
+        viewLevel(d.formId) == 'all' ||
+        (viewLevel(d.formId) == 'own' && d.ownerId == uid())
+      ));
+    }
+    function canEditRecord(d) {
+      return isAdmin() || (hasAccount() && (
+        editLevel(d.formId) == 'all' ||
+        (editLevel(d.formId) == 'own' && d.ownerId == uid())
+      ));
+    }
+    function canCreateIn(formId) {
+      return isAdmin() || (hasAccount() && editLevel(formId) in ['own', 'all']);
+    }
+    function validRecord(d) {
+      return d.keys().hasOnly(['formId', 'values', 'parentId', 'parentFormId', 'ownerId',
+                               'createdBy', 'createdAt', 'updatedAt', 'updatedBy'])
+        && d.keys().hasAll(['formId', 'values', 'ownerId', 'createdBy', 'updatedBy'])
+        && d.formId is string
+        && d.values is map
+        && d.ownerId is string
+        && d.updatedBy == uid()
+        // existsAfter so a batch can create a form and its first records together.
+        && existsAfter(/databases/$(database)/documents/forms/$(d.formId));
+    }
+
+    match /forms/{formId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /records/{recordId} {
+      // List queries must filter by formId, and by ownerId == your uid when you only
+      // have "own" access, or Firestore rejects the query.
+      allow read: if signedIn() && canViewRecord(resource.data);
+
+      allow create: if signedIn()
+        && validRecord(request.resource.data)
+        && request.resource.data.ownerId == uid()
+        && request.resource.data.createdBy == uid()
+        && canCreateIn(request.resource.data.formId);
+
+      allow update: if signedIn()
+        && validRecord(request.resource.data)
+        && canEditRecord(resource.data)
+        && request.resource.data.formId == resource.data.formId
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.createdBy == resource.data.createdBy;
+
+      allow delete: if signedIn() && canEditRecord(resource.data);
+    }
+
+    match /groups/{groupId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /profiles/{userId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && userId == uid()
+        && request.resource.data.keys().hasOnly(['displayName', 'photoURL'])
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 120;
+      allow delete: if isAdmin() || (signedIn() && userId == uid());
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && (userId == uid() || isAdmin());
+
+      // A new account starts as a member with no groups and no access.
+      allow create: if signedIn() && userId == uid()
+        && request.resource.data.keys().hasOnly(['email', 'displayName', 'role', 'groups', 'access', 'createdAt'])
+        && request.resource.data.role == 'member'
+        && request.resource.data.groups == []
+        && request.resource.data.access == {}
+        && request.resource.data.email == request.auth.token.get('email', '');
+
+      // Users may change only their display name. Admins may change anything.
+      allow update: if isAdmin()
+        || (signedIn() && userId == uid()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName']));
+
+      allow delete: if isAdmin();
+    }
+  }
+}

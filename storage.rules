@@ -1,0 +1,35 @@
+rules_version = '2';
+
+// Uploaded files live at uploads/{formId}/{uploaderUid}/{fileName}.
+// Permissions mirror the Firestore `access` map on users/{uid} (cross-service rules).
+// The first deploy asks you to let Storage read Firestore; accept it.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() { return request.auth != null; }
+    function me() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+    }
+    function isAdmin() { return me().get('role', 'member') == 'admin'; }
+    function level(formId) {
+      let acc = me().get('access', {});
+      return acc.get(formId, acc.get('*', {'view': 'none', 'edit': 'none'}));
+    }
+
+    match /uploads/{formId}/{ownerId}/{fileName} {
+      allow read: if signedIn() && (
+        isAdmin()
+        || level(formId).get('view', 'none') == 'all'
+        || (level(formId).get('view', 'none') == 'own' && ownerId == request.auth.uid)
+      );
+
+      allow create: if signedIn()
+        && ownerId == request.auth.uid
+        && (isAdmin() || level(formId).get('edit', 'none') in ['own', 'all'])
+        && request.resource.size < 25 * 1024 * 1024;
+
+      allow delete: if signedIn() && (ownerId == request.auth.uid || isAdmin());
+    }
+  }
+}
