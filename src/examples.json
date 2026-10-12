@@ -1,0 +1,520 @@
+{
+  "forms": [
+    {
+      "id": "f_clients",
+      "name": "Clients",
+      "itemName": "Client",
+      "description": "Example form. Companies you work with. Projects and contacts are created from a client.",
+      "color": 0,
+      "showInSidebar": true,
+      "order": 1,
+      "titleField": "c_name",
+      "children": [
+        {
+          "formId": "f_projects",
+          "copy": true
+        },
+        {
+          "formId": "f_contacts",
+          "copy": false
+        }
+      ],
+      "fields": [
+        {
+          "id": "c_name",
+          "type": "text",
+          "label": "Company name",
+          "required": true,
+          "inList": true,
+          "width": "full",
+          "placeholder": "e.g. Northwind Builders"
+        },
+        {
+          "id": "c_status",
+          "type": "select",
+          "label": "Status",
+          "options": [
+            "Lead",
+            "Active",
+            "Paused"
+          ],
+          "inList": true,
+          "width": "half"
+        },
+        {
+          "id": "c_industry",
+          "type": "text",
+          "label": "Industry",
+          "width": "half"
+        },
+        {
+          "id": "c_email",
+          "type": "email",
+          "label": "Main email",
+          "inList": true,
+          "width": "half"
+        },
+        {
+          "id": "c_phone",
+          "type": "phone",
+          "label": "Phone",
+          "width": "half"
+        },
+        {
+          "id": "c_site",
+          "type": "url",
+          "label": "Website",
+          "width": "full"
+        },
+        {
+          "id": "c_addr",
+          "type": "location",
+          "label": "Head office",
+          "width": "full"
+        },
+        {
+          "id": "c_rating",
+          "type": "rating",
+          "label": "Relationship",
+          "max": 5,
+          "inList": true,
+          "width": "half"
+        },
+        {
+          "id": "c_total",
+          "type": "formula",
+          "label": "Total project budget",
+          "expr": "CHILDSUM(\"Projects\", \"Budget\")",
+          "format": "currency",
+          "currency": "CAD",
+          "inList": true,
+          "width": "half",
+          "help": "Adds up the budget of every project under this client."
+        },
+        {
+          "id": "c_count",
+          "type": "formula",
+          "label": "Project count",
+          "expr": "CHILDCOUNT(\"Projects\")",
+          "format": "number",
+          "decimals": 0,
+          "inList": false,
+          "width": "half"
+        }
+      ]
+    },
+    {
+      "id": "f_projects",
+      "name": "Projects",
+      "itemName": "Project",
+      "description": "Example form. Each project belongs to a client and can hold site visits.",
+      "color": 1,
+      "showInSidebar": true,
+      "order": 2,
+      "titleField": "p_title",
+      "children": [
+        {
+          "formId": "f_visits",
+          "copy": true
+        }
+      ],
+      "fields": [
+        {
+          "id": "p_title",
+          "type": "text",
+          "label": "Project name",
+          "required": true,
+          "inList": true,
+          "width": "full"
+        },
+        {
+          "id": "p_stage",
+          "type": "select",
+          "label": "Stage",
+          "options": [
+            "Scoping",
+            "In progress",
+            "Review",
+            "Done"
+          ],
+          "inList": true,
+          "width": "half"
+        },
+        {
+          "id": "p_budget",
+          "type": "currency",
+          "label": "Budget",
+          "currency": "CAD",
+          "min": 0,
+          "inList": true,
+          "width": "half"
+        },
+        {
+          "id": "p_hours",
+          "type": "decimal",
+          "label": "Estimated hours",
+          "decimals": 1,
+          "min": 0,
+          "width": "half"
+        },
+        {
+          "id": "p_start",
+          "type": "date",
+          "label": "Start date",
+          "width": "half"
+        },
+        {
+          "id": "p_due",
+          "type": "date",
+          "label": "Due date",
+          "inList": true,
+          "width": "half"
+        },
+        {
+          "id": "p_progress",
+          "type": "range",
+          "label": "Progress",
+          "min": 0,
+          "max": 100,
+          "step": 5,
+          "suffix": "%",
+          "inList": true,
+          "width": "half"
+        },
+        {
+          "id": "p_tax",
+          "type": "formula",
+          "label": "Budget with tax",
+          "expr": "ROUND({Budget} * 1.13, 2)",
+          "format": "currency",
+          "currency": "CAD",
+          "inList": false,
+          "width": "half",
+          "help": "Budget plus 13% HST."
+        },
+        {
+          "id": "p_rate",
+          "type": "formula",
+          "label": "Budget per hour",
+          "expr": "IF({Estimated hours} > 0, {Budget} / {Estimated hours}, 0)",
+          "format": "currency",
+          "currency": "CAD",
+          "inList": false,
+          "width": "half"
+        },
+        {
+          "id": "p_days",
+          "type": "formula",
+          "label": "Days until due",
+          "expr": "DAYS({Due date}, TODAY())",
+          "format": "days",
+          "inList": true,
+          "width": "half"
+        },
+        {
+          "id": "p_brief",
+          "type": "textarea",
+          "label": "Brief",
+          "width": "full"
+        },
+        {
+          "id": "p_sow",
+          "type": "file",
+          "label": "Statement of work",
+          "width": "full",
+          "help": "PDF or Word document"
+        }
+      ]
+    },
+    {
+      "id": "f_visits",
+      "name": "Site visits",
+      "itemName": "Site visit",
+      "description": "Example form. Hidden from the sidebar; reached from a project.",
+      "color": 2,
+      "showInSidebar": false,
+      "order": 3,
+      "titleField": "v_title",
+      "children": [],
+      "fields": [
+        {
+          "id": "v_title",
+          "type": "text",
+          "label": "Visit summary",
+          "required": true,
+          "inList": true,
+          "width": "full"
+        },
+        {
+          "id": "v_when",
+          "type": "datetime",
+          "label": "Visited at",
+          "inList": true,
+          "width": "half"
+        },
+        {
+          "id": "v_contact",
+          "type": "relation",
+          "label": "Contact on site",
+          "relForm": "f_contacts",
+          "inList": true,
+          "width": "half"
+        },
+        {
+          "id": "v_loc",
+          "type": "location",
+          "label": "Site location",
+          "width": "full"
+        },
+        {
+          "id": "v_head",
+          "type": "heading",
+          "label": "Checks",
+          "help": "Complete before leaving the site."
+        },
+        {
+          "id": "v_safety",
+          "type": "checkbox",
+          "label": "Safety briefing done",
+          "inList": true,
+          "width": "half"
+        },
+        {
+          "id": "v_temp",
+          "type": "number",
+          "label": "Crew on site",
+          "min": 0,
+          "width": "half"
+        },
+        {
+          "id": "v_issues",
+          "type": "multiselect",
+          "label": "Issues found",
+          "options": [
+            "Access",
+            "Power",
+            "Water damage",
+            "Noise",
+            "None"
+          ],
+          "width": "full"
+        },
+        {
+          "id": "v_photo",
+          "type": "image",
+          "label": "Site photo",
+          "width": "half"
+        },
+        {
+          "id": "v_sign",
+          "type": "signature",
+          "label": "Client sign-off",
+          "width": "half"
+        },
+        {
+          "id": "v_notes",
+          "type": "textarea",
+          "label": "Notes",
+          "width": "full"
+        }
+      ]
+    },
+    {
+      "id": "f_contacts",
+      "name": "Contacts",
+      "itemName": "Contact",
+      "description": "Example form. People at each client.",
+      "color": 3,
+      "showInSidebar": false,
+      "order": 4,
+      "titleField": "k_name",
+      "children": [],
+      "fields": [
+        {
+          "id": "k_name",
+          "type": "text",
+          "label": "Full name",
+          "required": true,
+          "inList": true,
+          "width": "full"
+        },
+        {
+          "id": "k_role",
+          "type": "text",
+          "label": "Role",
+          "inList": true,
+          "width": "half"
+        },
+        {
+          "id": "k_email",
+          "type": "email",
+          "label": "Email",
+          "inList": true,
+          "width": "half"
+        },
+        {
+          "id": "k_phone",
+          "type": "phone",
+          "label": "Phone",
+          "inList": true,
+          "width": "half"
+        },
+        {
+          "id": "k_pref",
+          "type": "radio",
+          "label": "Preferred contact",
+          "options": [
+            "Email",
+            "Phone",
+            "Text"
+          ],
+          "width": "half"
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "id": "r_c1",
+      "formId": "f_clients",
+      "parentId": null,
+      "parentFormId": null,
+      "createdAt": 1759752000000,
+      "updatedAt": 1760100000000,
+      "values": {
+        "c_name": "Northwind Builders",
+        "c_status": "Active",
+        "c_industry": "Construction",
+        "c_email": "ops@northwind.example",
+        "c_phone": "+1 416 555 0142",
+        "c_site": "https://northwind.example",
+        "c_addr": {
+          "address": "100 Queen St W, Toronto, ON",
+          "lat": 43.6525,
+          "lng": -79.3832
+        },
+        "c_rating": 4
+      }
+    },
+    {
+      "id": "r_c2",
+      "formId": "f_clients",
+      "parentId": null,
+      "parentFormId": null,
+      "createdAt": 1759838400000,
+      "updatedAt": 1760000000000,
+      "values": {
+        "c_name": "Harbourline Dental",
+        "c_status": "Lead",
+        "c_industry": "Healthcare",
+        "c_email": "hello@harbourline.example",
+        "c_phone": "+1 905 555 0187",
+        "c_rating": 3
+      }
+    },
+    {
+      "id": "r_p1",
+      "formId": "f_projects",
+      "parentId": "r_c1",
+      "parentFormId": "f_clients",
+      "createdAt": 1759924800000,
+      "updatedAt": 1760190000000,
+      "values": {
+        "p_title": "Lobby renovation",
+        "p_stage": "In progress",
+        "p_budget": 48000,
+        "p_hours": 120.5,
+        "p_start": "2026-09-14",
+        "p_due": "2026-11-30",
+        "p_progress": 45,
+        "p_brief": "Replace flooring and front desk; keep the lobby open on weekdays."
+      }
+    },
+    {
+      "id": "r_p2",
+      "formId": "f_projects",
+      "parentId": "r_c1",
+      "parentFormId": "f_clients",
+      "createdAt": 1760011200000,
+      "updatedAt": 1760011200000,
+      "values": {
+        "p_title": "Parking signage",
+        "p_stage": "Scoping",
+        "p_budget": 6500,
+        "p_hours": 18,
+        "p_due": "2026-12-12",
+        "p_progress": 10
+      }
+    },
+    {
+      "id": "r_p3",
+      "formId": "f_projects",
+      "parentId": "r_c2",
+      "parentFormId": "f_clients",
+      "createdAt": 1760097600000,
+      "updatedAt": 1760150000000,
+      "values": {
+        "p_title": "Clinic fit-out",
+        "p_stage": "Review",
+        "p_budget": 112000,
+        "p_hours": 340,
+        "p_due": "2026-10-30",
+        "p_progress": 80
+      }
+    },
+    {
+      "id": "r_k1",
+      "formId": "f_contacts",
+      "parentId": "r_c1",
+      "parentFormId": "f_clients",
+      "createdAt": 1759760000000,
+      "updatedAt": 1759760000000,
+      "values": {
+        "k_name": "Dana Okafor",
+        "k_role": "Site manager",
+        "k_email": "dana@northwind.example",
+        "k_phone": "+1 416 555 0199",
+        "k_pref": "Phone"
+      }
+    },
+    {
+      "id": "r_k2",
+      "formId": "f_contacts",
+      "parentId": "r_c2",
+      "parentFormId": "f_clients",
+      "createdAt": 1759840000000,
+      "updatedAt": 1759840000000,
+      "values": {
+        "k_name": "Sam Ritchie",
+        "k_role": "Office lead",
+        "k_email": "sam@harbourline.example",
+        "k_pref": "Email"
+      }
+    },
+    {
+      "id": "r_v1",
+      "formId": "f_visits",
+      "parentId": "r_p1",
+      "parentFormId": "f_projects",
+      "createdAt": 1760184000000,
+      "updatedAt": 1760184000000,
+      "values": {
+        "v_title": "Pre-demolition walkthrough",
+        "v_when": "2026-10-06T09:30",
+        "v_contact": "r_k1",
+        "v_loc": {
+          "address": "100 Queen St W, Toronto, ON",
+          "lat": 43.6525,
+          "lng": -79.3832
+        },
+        "v_safety": true,
+        "v_temp": 4,
+        "v_issues": [
+          "Access",
+          "Power"
+        ],
+        "v_notes": "Freight elevator booked for Thursday. Panel B needs an electrician before demo."
+      }
+    }
+  ]
+}
