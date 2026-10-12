@@ -1,4 +1,5 @@
 // Formwright application: navigation, record screens and the form designer.
+import './designer.css';
 // Admin screens (users and groups) live in admin.js; data access in store.js.
 
 import { store, uploadFile, deleteFormCascade, loadExamples as writeExamples } from './store.js';
@@ -447,13 +448,25 @@ function viewFormEdit(){
   let body='';
   if(ui.tab==='fields'){
     const groups=[...new Set(TYPES.map(t=>t[3]))];
-    body=`<div class="panel">${f.fields.length?f.fields.map((x,i)=>`<div class="frow${ui.openField===x.id?' open':''}" data-feid="${x.id}">
-        <div class="frow-h"><span class="glyph" title="${esc(T[x.type].label)}">${T[x.type].glyph}</span>
-          <button class="lab" data-act="open-field" data-id="${x.id}" aria-expanded="${ui.openField===x.id}"><b id="frl-${x.id}">${esc(x.label||'Untitled field')}${x.required?'<span class="req">*</span>':''}</b><small>${esc(T[x.type].label)}${x.type==='relation'&&formById(x.relForm)?' → '+esc(formById(x.relForm).name):''}${x.inList?' · in list':''}${f.titleField===x.id?' · title':''}</small></button>
-          <div class="fctl"><button class="ibtn" data-act="field-move" data-id="${x.id}" data-dir="-1" aria-label="Move up"${i===0?' disabled':''}>↑</button><button class="ibtn" data-act="field-move" data-id="${x.id}" data-dir="1" aria-label="Move down"${i===f.fields.length-1?' disabled':''}>↓</button><button class="ibtn hide-sm" data-act="field-dup" data-id="${x.id}" aria-label="Duplicate">⧉</button><button class="ibtn" data-act="field-del" data-id="${x.id}" aria-label="Delete field" style="${ui.confirm==='f-'+x.id?'color:var(--danger)':''}">${ui.confirm==='f-'+x.id?'✓?':'✕'}</button></div></div>
-        ${ui.openField===x.id?fieldEditor(x):''}</div>`).join(''):`<p class="note">No fields yet. Add one below.</p>`}</div>
-      <div class="panel palette"><div class="section-h"><h2 style="font-size:1rem">Add a field</h2><span class="help">Tap a type to add it to the end.</span></div>
-        ${groups.map(g=>`<div class="pgroup"><span>${g}</span><div class="pgrid">${TYPES.filter(t=>t[3]===g).map(t=>`<button class="ptype" data-act="add-field" data-type="${t[0]}"><span class="glyph">${t[2]}</span>${t[1]}</button>`).join('')}</div></div>`).join('')}</div>`;
+    body=`<div class="dz">
+      <aside class="panel dz-types" aria-label="Field types">
+        <h2 class="dz-h">Field types</h2>
+        ${groups.map(g=>`<div class="pgroup"><span>${g}</span>${TYPES.filter(t=>t[3]===g).map(t=>`<button class="dz-chip" draggable="true" data-act="add-field" data-type="${t[0]}" title="Drag onto the form, or tap to add"><span class="glyph">${t[2]}</span>${t[1]}</button>`).join('')}</div>`).join('')}
+      </aside>
+      <aside class="panel dz-list" aria-label="Fields in this form">
+        <h2 class="dz-h">In this form (${f.fields.length})</h2>
+        ${f.fields.length?`<ol class="dz-ol">${f.fields.map((x,i)=>`<li><button class="dz-li" data-act="focus-field" data-id="${x.id}"><span class="num">${i+1}</span><span class="fname">${esc(x.label||'Untitled field')}</span><span class="ftype">${esc(T[x.type].label)}</span></button></li>`).join('')}</ol>`:`<p class="note">No fields yet.</p>`}
+      </aside>
+      <main class="panel dz-canvas" data-dz-canvas aria-label="Form canvas">
+        ${f.fields.length?f.fields.map((x)=>`<div class="crow" draggable="true" data-feid="${x.id}">
+          <span class="grip" aria-hidden="true"></span>
+          <span class="glyph" title="${esc(T[x.type].label)}">${T[x.type].glyph}</span>
+          <div class="crow-m"><b id="frl-${x.id}">${esc(x.label||'Untitled field')}${x.required?'<span class="req">*</span>':''}</b><small>${esc(T[x.type].label)}${x.type==='relation'&&formById(x.relForm)?' → '+esc(formById(x.relForm).name):''}${x.inList?' · in list':''}${f.titleField===x.id?' · title':''}</small></div>
+          <button class="ibtn dz-dots" data-act="open-field" data-id="${x.id}" aria-label="Options for ${esc(x.label||'field')}">⋯</button>
+        </div>`).join(''):`<p class="note dz-empty">Drag a field type here to add it.</p>`}
+        <div class="dz-drop">Drop a field type here</div>
+      </main>
+    </div>${ui.openField?fieldModal():''}`;
   }else if(ui.tab==='relations'){
     const others=store.forms.filter(x=>x.id!==f.id).sort(byOrder);
     const par=parentsOf(f.id);
@@ -486,6 +499,27 @@ function viewFormEdit(){
   <div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button class="tab${ui.tab===k?' on':''}" role="tab" aria-selected="${ui.tab===k}" data-act="tab" data-tab="${k}">${l}${k==='fields'?` <span class="count">${f.fields.length}</span>`:''}${k==='relations'&&(f.children||[]).length?` <span class="count">${f.children.length}</span>`:''}</button>`).join('')}</div>
   ${body}
   <div class="panel savebar" style="border-radius:var(--r)"><span class="grow" id="fdirty">${f.dirty?'Unsaved changes':'All changes saved'}</span><button class="btn ghost" data-act="done-form">${f.dirty?'Discard':'Done'}</button><button class="btn primary" data-act="save-form">Save form</button></div>`;
+}
+/* Field options popup. Reuses fieldEditor, so every option and its handlers stay the same. */
+function fieldModal(){
+  const x=fdraft.fields.find(z=>z.id===ui.openField);
+  if(!x)return '';
+  const i=fdraft.fields.indexOf(x),last=fdraft.fields.length-1;
+  const armed=ui.confirm==='f-'+x.id;
+  return `<div class="fscrim">
+    <div class="fmodal" data-feid="${x.id}" role="dialog" aria-modal="true" aria-labelledby="fm-t-${x.id}" style="transform:translate3d(${fmPos.x}px,${fmPos.y}px,0)">
+      <div class="fmodal-h"><span class="glyph">${T[x.type].glyph}</span><b id="fm-t-${x.id}">${esc(x.label||'Untitled field')}</b><span class="fm-type">${esc(T[x.type].label)}</span><button class="ibtn" data-act="close-field" aria-label="Close">✕</button></div>
+      <div class="fmodal-b">${fieldEditor(x)}</div>
+      <div class="fmodal-f">
+        <button class="ibtn" data-act="field-move" data-id="${x.id}" data-dir="-1" aria-label="Move up"${i===0?' disabled':''}>↑</button>
+        <button class="ibtn" data-act="field-move" data-id="${x.id}" data-dir="1" aria-label="Move down"${i===last?' disabled':''}>↓</button>
+        <button class="btn sm" data-act="field-dup" data-id="${x.id}">Duplicate</button>
+        <span class="grow"></span>
+        <button class="btn sm danger${armed?' armed':''}" data-act="field-del" data-id="${x.id}">${armed?'Tap again to delete':'Delete'}</button>
+        <button class="btn sm primary" data-act="close-field">Done</button>
+      </div>
+    </div>
+  </div>`;
 }
 function fieldEditor(x){
   const P=(l,h,c='')=>`<label class="prop ${c}"><span>${l}</span>${h}</label>`;
@@ -597,8 +631,10 @@ document.addEventListener('click',async e=>{
     case 'sig-clear':{const d=draftOf(el);const f=formOfDraft(d).fields.find(x=>x.id===el.dataset.fid);d.values[f.id]=null;markDirty(d);repaint(d,f);break;}
     case 'edit-form':editForm(id);break;
     case 'new-form':if(!guard())return;fdraft={id:uid('f'),name:'',itemName:'',description:'',color:store.forms.length%COLORS.length,showInSidebar:true,titleField:'',children:[],fields:[],isNew:true,dirty:true};fdraft.fields.push({...newField('text'),label:'Name',required:true,inList:true,width:'full'});pdraft=null;go({name:'formEdit',formId:fdraft.id});setTimeout(()=>$('.title-in')?.focus(),50);break;
-    case 'tab':ui.tab=el.dataset.tab;ui.confirm=null;if(ui.tab==='preview')pdraft=null;renderMain();break;
-    case 'open-field':ui.openField=ui.openField===id?null:id;renderMain();break;
+    case 'tab':ui.tab=el.dataset.tab;ui.confirm=null;ui.openField=null;if(ui.tab==='preview')pdraft=null;renderMain();break;
+    case 'open-field':ui.openField=id;fmPos={x:0,y:0};renderMain();break;
+    case 'close-field':ui.openField=null;renderMain();break;
+    case 'focus-field':document.querySelector(`.crow[data-feid="${id}"]`)?.scrollIntoView({block:'center',behavior:'smooth'});break;
     case 'add-field':{const f=newField(el.dataset.type);fdraft.fields.push(f);ui.openField=f.id;setFdirty();renderMain();document.querySelector(`[data-feid="${f.id}"]`)?.scrollIntoView({block:'center',behavior:'smooth'});break;}
     case 'field-move':{const fs=fdraft.fields,i=fs.findIndex(x=>x.id===id),j=i+(+el.dataset.dir);if(j<0||j>=fs.length)return;[fs[i],fs[j]]=[fs[j],fs[i]];setFdirty();renderMain();break;}
     case 'field-dup':{const i=fdraft.fields.findIndex(x=>x.id===id);const c={...clone(fdraft.fields[i]),id:uid('x')};c.label+=' (copy)';fdraft.fields.splice(i+1,0,c);ui.openField=c.id;setFdirty();renderMain();break;}
@@ -659,6 +695,103 @@ async function loadExamples(){
   try{await writeExamples(examples);toast('Example forms loaded. Give people access in Security groups.');home();}
   catch(e){console.error(e);toast('Loading the examples failed. Try again.');}
 }
+
+/* ---------- Designer drag and drop ---------- */
+// Canvas rows and palette types use HTML5 drag and drop (desktop). On touch screens, use the ↑ ↓ buttons in the options popup.
+let dzDrag=null;            // {kind:'move', id} or {kind:'new', type}
+let dzGap=null;             // the blue insertion line
+function dzIndex(canvas,y){
+  const rows=[...canvas.querySelectorAll('.crow:not(.dragging)')];
+  for(let i=0;i<rows.length;i++){
+    const r=rows[i].getBoundingClientRect();
+    if(y<r.top+r.height/2)return {rows,i};
+  }
+  return {rows,i:rows.length};
+}
+document.addEventListener('dragstart',e=>{
+  const chip=e.target.closest?.('.dz-chip');
+  const row=e.target.closest?.('.crow');
+  if(chip){dzDrag={kind:'new',type:chip.dataset.type};e.dataTransfer.effectAllowed='copy';}
+  else if(row){dzDrag={kind:'move',id:row.dataset.feid};row.classList.add('dragging');e.dataTransfer.effectAllowed='move';}
+  else return;
+  try{e.dataTransfer.setData('text/plain',dzDrag.kind);}catch(err){}
+});
+document.addEventListener('dragover',e=>{
+  const canvas=e.target.closest?.('[data-dz-canvas]');
+  if(!canvas||!dzDrag)return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect=dzDrag.kind==='new'?'copy':'move';
+  const {rows,i}=dzIndex(canvas,e.clientY);
+  dzGap=dzGap||document.createElement('div');
+  dzGap.className='dz-gap';
+  const ref=rows[i]||canvas.querySelector('.dz-drop');
+  if(ref&&dzGap!==ref.previousElementSibling)canvas.insertBefore(dzGap,ref);
+});
+document.addEventListener('drop',e=>{
+  const canvas=e.target.closest?.('[data-dz-canvas]');
+  if(!canvas||!dzDrag||!fdraft)return;
+  e.preventDefault();
+  const {i}=dzIndex(canvas,e.clientY);
+  const drag=dzDrag;dzDrag=null;
+  const fs=fdraft.fields;
+  if(drag.kind==='move'){
+    const moved=fs.find(x=>x.id===drag.id);
+    if(!moved)return;
+    const rest=fs.filter(x=>x.id!==drag.id);
+    const next=[...rest.slice(0,i),moved,...rest.slice(i)];
+    if(next.every((x,k)=>x===fs[k]))return;   // dropped where it already was
+    fdraft.fields=next;
+  }else{
+    const nf=newField(drag.type);
+    fdraft.fields=[...fs.slice(0,i),nf,...fs.slice(i)];
+    ui.openField=nf.id;
+    fmPos={x:0,y:0};
+  }
+  setFdirty();
+  renderMain();
+});
+document.addEventListener('dragend',()=>{
+  dzDrag=null;
+  document.querySelectorAll('.crow.dragging').forEach(r=>r.classList.remove('dragging'));
+  dzGap?.remove();
+});
+
+// Options popup: drag by its header. Movement is applied once per frame with a transform.
+let fmPos={x:0,y:0};        // remembered position, reapplied on every render
+let fmDrag=null;
+document.addEventListener('pointerdown',e=>{
+  const h=e.target.closest?.('.fmodal-h');
+  if(!h||e.button!==0||e.target.closest('button'))return;
+  const m=h.parentElement;
+  const s=m.parentElement.getBoundingClientRect();
+  const r=m.getBoundingClientRect();
+  fmDrag={m,id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:fmPos.x,oy:fmPos.y,
+    dxMin:s.left-r.left,dxMax:s.right-r.right,dyMin:s.top-r.top,dyMax:s.bottom-r.bottom,
+    nx:fmPos.x,ny:fmPos.y,raf:0};
+  h.setPointerCapture(e.pointerId);
+  m.style.transition='none';
+  m.classList.add('lift');
+  e.preventDefault();
+});
+document.addEventListener('pointermove',e=>{
+  const d=fmDrag;
+  if(!d||e.pointerId!==d.id)return;
+  d.nx=d.ox+Math.min(Math.max(e.clientX-d.sx,d.dxMin),d.dxMax);
+  d.ny=d.oy+Math.min(Math.max(e.clientY-d.sy,d.dyMin),d.dyMax);
+  if(!d.raf)d.raf=requestAnimationFrame(()=>{d.raf=0;d.m.style.transform=`translate3d(${d.nx}px,${d.ny}px,0)`;});
+});
+function endFmDrag(e){
+  const d=fmDrag;
+  if(!d||e.pointerId!==d.id)return;
+  if(d.raf)cancelAnimationFrame(d.raf);
+  d.m.style.transform=`translate3d(${d.nx}px,${d.ny}px,0)`;
+  d.m.style.transition='';
+  d.m.classList.remove('lift');
+  fmPos={x:d.nx,y:d.ny};
+  fmDrag=null;
+}
+document.addEventListener('pointerup',endFmDrag);
+document.addEventListener('pointercancel',endFmDrag);
 
 /* ---------- Lifecycle (called from main.js) ---------- */
 export function startApp(){

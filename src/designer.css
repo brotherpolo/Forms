@@ -1,0 +1,49 @@
+/* Form designer: field types on the left, field list, drag-and-drop canvas, field options popup. */
+
+.dz{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
+.dz-types{flex:0 1 200px;min-width:170px;padding:12px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px}
+.dz-list{flex:0 1 230px;min-width:190px;padding:12px;box-sizing:border-box}
+.dz-canvas{flex:999 1 420px;min-width:0;padding:12px;box-sizing:border-box}
+
+.dz-h{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:4px 4px 10px;font-weight:600}
+
+.dz-chip{display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg);font:inherit;font-size:13px;cursor:grab;text-align:left;box-sizing:border-box}
+.dz-chip:hover{border-color:var(--accent)}
+.dz-chip .glyph{width:26px;height:26px;font-size:11px}
+
+.dz-ol{list-style:none;margin:0;padding:0}
+.dz-li{display:flex;align-items:center;gap:8px;width:100%;min-height:36px;padding:6px 8px;border:0;background:none;color:var(--fg);font:inherit;font-size:13px;text-align:left;border-radius:6px;cursor:pointer;box-sizing:border-box}
+.dz-li:hover{background:var(--sunk)}
+.dz-li .num{width:18px;color:var(--muted);font-size:12px;text-align:right;flex:none}
+.dz-li .fname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dz-li .ftype{font-size:11px;color:var(--muted);background:var(--sunk);border-radius:4px;padding:2px 6px;white-space:nowrap}
+
+.crow{display:flex;align-items:center;gap:10px;min-height:52px;padding:8px 8px 8px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);margin-bottom:8px;cursor:grab;box-sizing:border-box;transition:border-color .15s,opacity .15s}
+.crow:hover{border-color:var(--line-strong)}
+.crow.dragging{opacity:.45}
+.crow .glyph{width:30px;height:30px;font-size:11px}
+.crow-m{flex:1;min-width:0;display:flex;flex-direction:column}
+.crow-m b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.crow-m small{font-size:12px;color:var(--muted)}
+.dz-dots{flex:none}
+.dz-gap{height:4px;border-radius:2px;background:var(--accent);margin:-2px 0 6px}
+.dz-drop{border:1.5px dashed var(--line-strong);border-radius:var(--r);padding:14px;text-align:center;color:var(--muted);font-size:13px;margin-top:4px}
+.dz-empty{margin:0 0 8px}
+
+/* Options popup: sits over the whole screen and can be dragged by its header */
+.fscrim{position:fixed;inset:0;z-index:60;background:rgba(10,12,20,.4);display:flex;justify-content:center;align-items:flex-start;padding:48px 16px;overflow:auto;box-sizing:border-box}
+.fmodal{width:min(560px,100%);max-height:calc(100vh - 96px);display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 36px rgba(0,0,0,.22);will-change:transform;transition:box-shadow .2s ease;box-sizing:border-box}
+.fmodal.lift{box-shadow:0 24px 56px rgba(0,0,0,.34)}
+.fmodal-h{display:flex;align-items:center;gap:10px;padding:12px 12px 12px 14px;border-bottom:1px solid var(--line);cursor:grab;touch-action:none;user-select:none}
+.fmodal-h:active{cursor:grabbing}
+.fmodal-h b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fmodal-h .glyph{width:30px;height:30px;font-size:11px}
+.fm-type{font-size:12px;color:var(--muted)}
+.fmodal-b{overflow:auto;min-height:0;flex:1 1 auto}
+.fmodal-b .fedit{padding:14px 16px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.fmodal-f{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid var(--line);background:var(--sunk);flex-wrap:wrap}
+.fmodal-f .grow{flex:1}
+
+@media (max-width:720px){
+  .dz-types,.dz-list,.dz-canvas{flex:1 1 100%}
+}
