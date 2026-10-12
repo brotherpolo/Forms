@@ -64,4 +64,4 @@ jobs:
       - name: Deploy hosting and Firestore rules
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
-        run: npx firebase deploy --only hosting,firestore --project "${{ vars.FIREBASE_PROJECT_ID }}" --non-interactive
+        run: npx firebase deploy --only hosting --project "${{ vars.FIREBASE_PROJECT_ID }}" --non-interactive
